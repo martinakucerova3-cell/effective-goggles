@@ -1,0 +1,612 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Frigo Malin</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow column like a phone app; sticky tab bar; cards only for the recipe and the stats that matter. Palette: cold fridge enamel + fridge blue (main) + yolk yellow. */
+:root{
+  --bg:#ECF1F7; --surface:#FFFFFF; --sunk:#DCE5EF; --ink:#12263A; --muted:#566A80;
+  --line:#C5D3E2; --herb:#1F5FB0; --herb-ink:#FFFFFF; --yolk:#F2B705; --yolk-soft:#FBEBB5;
+  --danger:#B3402B;
+  --f-display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1622; --surface:#142133; --sunk:#1B2C42; --ink:#E3ECF6; --muted:#93A7BD; --line:#283F5B;
+  --herb:#6FA9EC; --herb-ink:#0A1525; --yolk:#F5C83A; --yolk-soft:#3A3214; --danger:#E5735C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1622; --surface:#142133; --sunk:#1B2C42; --ink:#E3ECF6; --muted:#93A7BD; --line:#283F5B;
+  --herb:#6FA9EC; --herb-ink:#0A1525; --yolk:#F5C83A; --yolk-soft:#3A3214; --danger:#E5735C; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:2.1rem;font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.45rem;font-weight:700}
+h3{font-size:1.05rem;font-weight:700}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+.eyebrow{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--muted)}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+.logo{display:flex;gap:10px;align-items:center}
+.logo svg{flex:none}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-block:8px;margin-bottom:12px}
+nav.tabs button{font:600 .95rem var(--f-body);padding:10px;border-radius:999px;border:1.5px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+section{display:grid;gap:18px}
+.btn{font:600 1rem var(--f-body);border:0;border-radius:12px;padding:13px 18px;cursor:pointer;background:var(--herb);color:var(--herb-ink);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.yolk{background:var(--yolk);color:#1d1600}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--yolk);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.step{display:flex;align-items:center;gap:10px;margin-bottom:-6px}
+.step-n{width:26px;height:26px;border-radius:999px;background:var(--herb);color:var(--herb-ink);display:grid;place-items:center;font:700 .85rem var(--f-display);flex:none}
+.drop{border:2px dashed var(--line);border-radius:var(--r);background:var(--surface);position:relative;overflow:hidden;transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--herb);background:color-mix(in srgb,var(--herb) 8%,var(--surface))}
+.drop.has-photo{border-style:solid}
+.photo-empty{display:grid;justify-items:center;text-align:center;gap:12px;padding:28px 16px}
+.photo-ctas{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;width:100%}
+.photo-ctas .btn{flex:1 1 200px;max-width:280px}
+.btn.big{padding:15px 20px;font-size:1.05rem}
+.btn.wide{width:100%}
+.btn.sm{padding:7px 12px;font-size:.88rem;background:var(--surface)}
+.photo-preview img{display:block;width:100%;max-height:340px;object-fit:cover}
+.photo-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px}
+.ok-pill{font-size:.82rem;font-weight:600;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--herb) 15%,transparent);color:var(--herb)}
+@media (hover:none){.drop-hint{display:none}}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 .875rem var(--f-body);border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--yolk-soft);border-color:var(--yolk)}
+.chip.ing{cursor:default;display:inline-flex;gap:6px;align-items:center;padding-right:6px}
+.chip.ing button{border:0;background:var(--sunk);color:var(--muted);border-radius:999px;width:22px;height:22px;cursor:pointer;font-size:.9rem;line-height:1}
+.field{display:grid;gap:6px}
+input[type=text],select,input[type=date]{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+.card{background:var(--surface);border-radius:var(--r);padding:20px;display:grid;gap:14px;border:1px solid var(--line)}
+.recipe-head{display:grid;gap:6px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.9rem;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:600}
+ol.steps{margin:0;padding-left:1.3em;display:grid;gap:8px}
+ul.list{margin:0;padding-left:1.1em;display:grid;gap:3px}
+.tip{background:var(--yolk-soft);border-radius:10px;padding:10px 12px;font-size:.92rem}
+.kcal-ok,.kcal-over{justify-self:start;font-size:.8rem;font-weight:600;padding:3px 10px;border-radius:999px}
+.kcal-ok{background:color-mix(in srgb,var(--herb) 18%,transparent);color:var(--herb)}
+.kcal-over{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
+.status{font-size:.92rem;color:var(--muted);min-height:1.4em}
+.status.err{color:var(--danger)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:.9rem;z-index:20}
+.banner{border:1.5px dashed var(--yolk);background:var(--yolk-soft);border-radius:10px;padding:10px 12px;font-size:.9rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:2px;min-width:0}
+.stat .n{font-family:var(--f-display);font-size:1.8rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.stat .l{font-size:.78rem;color:var(--muted)}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:8.5em 1fr 2.2em;gap:10px;align-items:center;font-size:.9rem}
+.bar .track{height:12px;background:var(--sunk);border-radius:999px;overflow:hidden}
+.bar .fill{height:100%;background:var(--herb);border-radius:999px}
+.bar .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .d{aspect-ratio:1;border-radius:6px;background:var(--sunk);font-size:.7rem;display:grid;place-items:center;color:var(--muted);font-variant-numeric:tabular-nums;max-width:100%}
+.cal .d.l1{background:color-mix(in srgb,var(--herb) 40%,var(--sunk))}
+.cal .d.l2{background:var(--herb);color:var(--herb-ink)}
+.cal .d.blank{background:transparent}
+.meals{display:grid;gap:0;border-top:1px solid var(--line)}
+.meal{display:grid;grid-template-columns:3.4em 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.meal .date{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem}
+.meal .t{min-width:0}
+.meal .t div{overflow-wrap:anywhere}
+.tag{font-size:.72rem;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.tag.frigo{background:var(--yolk-soft);color:var(--ink)}
+.del{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;padding:4px}
+.bilan{white-space:pre-wrap}
+.sep{height:1px;background:var(--line);margin:4px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:420px){.stats{grid-template-columns:1fr 1fr}.bar{grid-template-columns:7em 1fr 2em}h1{font-size:1.8rem}}
+@media (prefers-reduced-motion:no-preference){.fade{animation:fade .35s ease}@keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="logo">
+      <svg width="40" height="48" viewBox="0 0 40 48" aria-hidden="true"><rect x="2" y="2" width="36" height="44" rx="7" fill="var(--herb)"/><line x1="2" y1="18" x2="38" y2="18" stroke="var(--bg)" stroke-width="2.5"/><rect x="8" y="8" width="3" height="6" rx="1.5" fill="var(--bg)"/><rect x="8" y="23" width="3" height="10" rx="1.5" fill="var(--bg)"/><circle cx="29" cy="34" r="5" fill="var(--yolk)"/></svg>
+      <div>
+        <h1>Frigo Malin</h1>
+        <p class="muted small">Ce qui reste au frigo devient le dîner.</p>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button id="tab-frigo" role="tab" aria-selected="true" aria-controls="v-frigo">Mon frigo</button>
+    <button id="tab-recap" role="tab" aria-selected="false" aria-controls="v-recap">Récap du mois</button>
+  </nav>
+
+  <!-- ============ FRIGO ============ -->
+  <section id="v-frigo" role="tabpanel" aria-labelledby="tab-frigo">
+    <div class="step"><span class="step-n">1</span><h3>Votre frigo en photo</h3></div>
+    <div class="drop" id="drop">
+      <input type="file" id="photo" accept="image/*" tabindex="-1" aria-hidden="true">
+      <input type="file" id="photo-cam" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">
+      <div class="photo-empty" id="photo-empty">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--herb)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <p class="muted small">Ouvrez la porte en grand pour que les étagères soient bien visibles.</p>
+        <div class="photo-ctas">
+          <button type="button" class="btn big" id="btn-cam">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            Prendre une photo</button>
+          <button type="button" class="btn ghost big" id="btn-import">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5"/><path d="M4 15v4h16v-4"/></svg>
+            Importer une photo</button>
+        </div>
+        <p class="muted small drop-hint">ou glissez une image ici</p>
+      </div>
+      <div class="photo-preview" id="photo-preview" hidden>
+        <img id="preview-img" alt="Photo de votre frigo">
+        <div class="photo-bar">
+          <span class="ok-pill">Photo prête</span>
+          <div class="row">
+            <button type="button" class="btn ghost sm" id="btn-change">Changer</button>
+            <button type="button" class="btn ghost sm" id="btn-remove">Retirer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="step"><span class="step-n">2</span><h3>Vos envies</h3></div>
+
+    <div class="field">
+      <span class="eyebrow">Temps disponible</span>
+      <div class="chips" id="time-chips">
+        <button class="chip" data-v="15 min" aria-pressed="false">15 min</button>
+        <button class="chip" data-v="30 min" aria-pressed="true">30 min</button>
+        <button class="chip" data-v="45 min ou plus" aria-pressed="false">45 min +</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="eyebrow">Envies et contraintes</span>
+      <div class="chips" id="pref-chips">
+        <button class="chip" data-v="végétarien" aria-pressed="false">Végétarien</button>
+        <button class="chip" data-v="sans gluten" aria-pressed="false">Sans gluten</button>
+        <button class="chip" data-v="sans lactose" aria-pressed="false">Sans lactose</button>
+        <button class="chip" data-v="adapté aux enfants" aria-pressed="false">Enfants</button>
+        <button class="chip" data-v="léger" aria-pressed="false">Léger</button>
+        <button class="chip" data-v="réconfortant" aria-pressed="false">Réconfortant</button>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label class="eyebrow" for="portions">Personnes</label>
+        <select id="portions"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>6</option></select></div>
+      <div class="field"><label class="eyebrow" for="placard">Placard</label>
+        <select id="placard"><option value="oui" selected>Basiques dispo</option><option value="non">Rien d'autre</option></select></div>
+    </div>
+    <div class="field">
+      <span class="eyebrow">Calories maximum par portion</span>
+      <div class="chips" id="kcal-chips">
+        <button class="chip" data-v="" aria-pressed="true">Pas de limite</button>
+        <button class="chip" data-v="400" aria-pressed="false">400 kcal</button>
+        <button class="chip" data-v="550" aria-pressed="false">550 kcal</button>
+        <button class="chip" data-v="700" aria-pressed="false">700 kcal</button>
+        <input type="number" id="kcal-custom" min="150" max="2000" step="10" inputmode="numeric" placeholder="Autre" aria-label="Autre limite de calories par portion" style="width:7.5em;font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:999px;padding:5px 12px">
+      </div>
+    </div>
+
+    <div class="step"><span class="step-n">3</span><h3>Votre recette</h3></div>
+    <button class="btn big wide" id="go" disabled>Trouver une recette</button>
+    <p class="status" id="status" aria-live="polite">Ajoutez une photo pour commencer.</p>
+
+    <div id="ing-box" hidden class="field fade">
+      <span class="eyebrow">Ingrédients repérés</span>
+      <div class="chips" id="ings"></div>
+      <div class="row">
+        <input type="text" id="add-ing" placeholder="Ajouter un ingrédient oublié" style="flex:1;min-width:0">
+        <button class="btn ghost" id="add-ing-btn">Ajouter</button>
+      </div>
+    </div>
+
+    <article class="card fade" id="recipe"></article>
+    <div class="row" id="recipe-actions" hidden>
+      <button class="btn yolk" id="cooked">J'ai cuisiné ce plat</button>
+      <button class="btn ghost" id="another">Une autre idée</button>
+    </div>
+
+    <div class="sep"></div>
+    <details id="manual">
+      <summary><strong>Ajouter un autre repas au journal</strong> <span class="muted small">(restaurant, plat du midi…)</span></summary>
+      <form id="manual-form" class="field" style="margin-top:12px">
+        <input type="text" id="m-title" placeholder="Ex. Salade niçoise" required>
+        <div class="grid2">
+          <select id="m-cat" aria-label="Catégorie"></select>
+          <input type="date" id="m-date" aria-label="Date">
+        </div>
+        <input type="text" id="m-ings" placeholder="Ingrédients principaux, séparés par des virgules">
+        <button class="btn ghost" type="submit">Ajouter au journal</button>
+      </form>
+    </details>
+  </section>
+
+  <!-- ============ RECAP ============ -->
+  <section id="v-recap" role="tabpanel" aria-labelledby="tab-recap" hidden>
+    <div class="row" style="justify-content:space-between">
+      <h2 id="month-title">Novembre 2026</h2>
+      <div class="row">
+        <button class="btn ghost" id="prev" aria-label="Mois précédent" style="padding:8px 14px">‹</button>
+        <button class="btn ghost" id="next" aria-label="Mois suivant" style="padding:8px 14px">›</button>
+      </div>
+    </div>
+    <p class="banner" id="example-banner" hidden>Aperçu avec des repas d'exemple. Dès que vous ajoutez vos repas, ce récap devient le vôtre.</p>
+
+    <div class="stats">
+      <div class="stat"><span class="n" id="s-meals">0</span><span class="l">repas notés</span></div>
+      <div class="stat"><span class="n" id="s-frigo">0</span><span class="l">recettes anti-gaspi</span></div>
+      <div class="stat"><span class="n" id="s-veg">0%</span><span class="l">repas végétariens</span></div>
+    </div>
+
+    <div class="card">
+      <h3>Ce que vous avez mangé</h3>
+      <div class="bars" id="bars"></div>
+    </div>
+
+    <div class="card">
+      <h3>Jours où vous avez cuisiné</h3>
+      <div class="cal" id="cal"></div>
+    </div>
+
+    <div class="card">
+      <h3>Vos ingrédients stars</h3>
+      <div class="chips" id="top-ings"></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h3>Votre bilan du mois</h3>
+        <button class="btn" id="bilan-btn">Rédiger mon bilan</button>
+      </div>
+      <p class="bilan muted" id="bilan">Claude lit votre journal du mois et vous écrit un bilan : équilibre, variété, et trois idées pour le mois prochain.</p>
+    </div>
+
+    <div>
+      <h3 style="margin-bottom:8px">Journal</h3>
+      <div class="meals" id="meals"></div>
+    </div>
+    <p class="muted small" id="storage-note"></p>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const CATS = ["Légumes & végé","Viande","Poisson & fruits de mer","Pâtes, riz & céréales","Œufs & laitages","Soupe","Sucré"];
+const VEG = new Set(["Légumes & végé","Pâtes, riz & céréales","Œufs & laitages","Soupe","Sucré"]);
+const $ = s => document.querySelector(s);
+const state = { blob:null, ingredients:[], recipe:null, meals:[], month:new Date(), store:"local", sample:null, db:null, uid:null, busy:false };
+
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,2400); }
+function esc(s){ return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function setStatus(msg, err){ const s=$("#status"); s.textContent=msg; s.classList.toggle("err",!!err); }
+const todayISO = () => new Date().toISOString().slice(0,10);
+
+/* ---------- Tabs ---------- */
+function showTab(name){
+  ["frigo","recap"].forEach(n=>{ $("#tab-"+n).setAttribute("aria-selected", n===name); $("#v-"+n).hidden = n!==name; });
+  if(name==="recap") renderRecap();
+  try{ history.replaceState(null,"","#"+name);}catch(e){}
+}
+$("#tab-frigo").onclick=()=>showTab("frigo");
+$("#tab-recap").onclick=()=>showTab("recap");
+window.addEventListener("hashchange",()=>showTab(location.hash==="#recap"?"recap":"frigo"));
+
+/* ---------- Chips ---------- */
+document.querySelectorAll("#time-chips .chip").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#time-chips .chip").forEach(x=>x.setAttribute("aria-pressed","false")); b.setAttribute("aria-pressed","true");
+});
+document.querySelectorAll("#pref-chips .chip").forEach(b=>b.onclick=()=>b.setAttribute("aria-pressed", b.getAttribute("aria-pressed")!=="true"));
+
+/* ---------- Calorie limit (remembered on this device) ---------- */
+const KC="frigo-malin-kcal";
+function kcalLimit(){
+  const custom = parseInt($("#kcal-custom").value,10);
+  if(custom>0) return custom;
+  const v = document.querySelector('#kcal-chips [aria-pressed="true"]')?.dataset.v;
+  return v ? parseInt(v,10) : null;
+}
+function setKcal(v){
+  let matched=false;
+  document.querySelectorAll("#kcal-chips .chip").forEach(b=>{ const on = String(b.dataset.v)===String(v??""); if(on) matched=true; b.setAttribute("aria-pressed", on); });
+  $("#kcal-custom").value = matched ? "" : (v||"");
+  try{ localStorage.setItem(KC, v?String(v):""); }catch(e){}
+}
+document.querySelectorAll("#kcal-chips .chip").forEach(b=>b.onclick=()=>setKcal(b.dataset.v));
+$("#kcal-custom").addEventListener("input",()=>{
+  const v=parseInt($("#kcal-custom").value,10);
+  document.querySelectorAll("#kcal-chips .chip").forEach(b=>b.setAttribute("aria-pressed", !(v>0) && b.dataset.v===""));
+  try{ localStorage.setItem(KC, v>0?String(v):""); }catch(e){}
+});
+try{ const saved=localStorage.getItem(KC); if(saved) setKcal(saved); }catch(e){}
+
+/* ---------- Photo ---------- */
+async function downscale(file){
+  const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(file); });
+  const max=1400, k=Math.min(1, max/Math.max(img.width,img.height));
+  const c=document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+  c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+  return await new Promise(r=>c.toBlob(r,"image/jpeg",.85));
+}
+async function handleFile(f){
+  if(!f) return;
+  if(f.type && !f.type.startsWith("image/")){ setStatus("Ce fichier n'est pas une image. Choisissez une photo JPEG ou PNG.", true); return; }
+  try{
+    state.blob = await downscale(f);
+    $("#preview-img").src = URL.createObjectURL(state.blob);
+    $("#photo-empty").hidden = true; $("#photo-preview").hidden = false; $("#drop").classList.add("has-photo");
+    state.ingredients=[]; renderIngs();
+    $("#go").disabled = !state.sample;
+    setStatus(state.sample ? "Photo prête. Choisissez vos envies puis lancez la recherche." : "La suggestion de recettes n'est pas disponible dans cette vue.", !state.sample);
+  }catch(err){ setStatus("Impossible de lire cette image. Essayez une photo JPEG ou PNG.", true); }
+}
+function clearPhoto(){
+  state.blob=null; $("#photo").value=""; $("#photo-cam").value="";
+  $("#photo-empty").hidden=false; $("#photo-preview").hidden=true; $("#drop").classList.remove("has-photo");
+  $("#go").disabled = !state.ingredients.length || !state.sample;
+  setStatus("Ajoutez une photo pour commencer.");
+}
+["#photo","#photo-cam"].forEach(id=>$(id).addEventListener("change", e=>handleFile(e.target.files?.[0])));
+$("#btn-cam").onclick=()=>$("#photo-cam").click();
+$("#btn-import").onclick=()=>$("#photo").click();
+$("#btn-change").onclick=()=>$("#photo").click();
+$("#btn-remove").onclick=clearPhoto;
+const dropEl=$("#drop");
+["dragenter","dragover"].forEach(ev=>dropEl.addEventListener(ev,e=>{ e.preventDefault(); dropEl.classList.add("over"); }));
+["dragleave","drop"].forEach(ev=>dropEl.addEventListener(ev,e=>{ e.preventDefault(); dropEl.classList.remove("over"); }));
+dropEl.addEventListener("drop",e=>handleFile(e.dataTransfer?.files?.[0]));
+
+/* ---------- Ingredients chips ---------- */
+function renderIngs(){
+  const box=$("#ings"); box.innerHTML="";
+  state.ingredients.forEach((ing,i)=>{
+    const s=document.createElement("span"); s.className="chip ing"; s.textContent=ing;
+    const x=document.createElement("button"); x.textContent="×"; x.setAttribute("aria-label","Retirer "+ing);
+    x.onclick=()=>{ state.ingredients.splice(i,1); renderIngs(); };
+    s.appendChild(x); box.appendChild(s);
+  });
+  $("#ing-box").hidden = !state.ingredients.length;
+}
+function addIng(){ const v=$("#add-ing").value.trim(); if(!v) return; state.ingredients.push(v); $("#add-ing").value=""; renderIngs(); }
+$("#add-ing-btn").onclick=addIng;
+$("#add-ing").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addIng(); }});
+
+/* ---------- Recipe ---------- */
+function prefs(){
+  return {
+    temps: document.querySelector('#time-chips [aria-pressed="true"]')?.dataset.v || "30 min",
+    contraintes: [...document.querySelectorAll('#pref-chips [aria-pressed="true"]')].map(b=>b.dataset.v),
+    personnes: $("#portions").value,
+    placard: $("#placard").value==="oui",
+    kcal: kcalLimit()
+  };
+}
+function buildPrompt(withPhoto, avoid){
+  const p=prefs();
+  const recent = state.meals.slice(-8).map(m=>m.titre).join(", ");
+  return `Tu es un cuisinier anti-gaspi qui aide des particuliers en France.
+${withPhoto ? "L'image jointe est une photo de l'intérieur de leur réfrigérateur. Repère d'abord tous les aliments visibles et identifiables (sois honnête : n'invente rien que tu ne vois pas)." : "Voici les ingrédients disponibles dans leur réfrigérateur : " + state.ingredients.join(", ") + "."}
+Propose UNE recette réalisable surtout avec ces ingrédients, en priorité ceux qui s'abîment vite.
+Contraintes : temps total ${p.temps} ; ${p.personnes} personne(s) ; ${p.contraintes.length ? p.contraintes.join(", ") : "aucune contrainte alimentaire"}.
+${p.kcal ? `LIMITE DE CALORIES IMPÉRATIVE : au maximum ${p.kcal} kcal par portion. Adapte les quantités (matières grasses, féculents, fromage) pour rester sous cette limite, et calcule kcal_par_portion honnêtement à partir des quantités indiquées.` : "Pas de limite de calories."}
+${p.placard ? "Ils ont les basiques de placard : sel, poivre, huile, vinaigre, farine, sucre, épices courantes, pâtes, riz." : "Ils n'ont rien d'autre que ce qu'il y a dans le frigo, à part sel, poivre et huile."}
+${avoid ? "Ne propose pas : " + avoid + "." : ""}${recent ? " Ils ont mangé récemment : " + recent + " — varie si possible." : ""}
+Réponds uniquement en JSON, en français, avec cette forme exacte :
+{"ingredients_detectes":["..."],"titre":"...","accroche":"une phrase","temps":"25 min","difficulte":"facile|moyen","portions":2,"categorie":"une valeur parmi ${CATS.join(" | ")}","ingredients":[{"nom":"...","quantite":"..."}],"a_acheter":["seulement si indispensable, sinon liste vide"],"etapes":["..."],"astuce_antigaspi":"une phrase","kcal_par_portion":450}`;
+}
+async function findRecipe(another){
+  if(!state.sample || state.busy) return;
+  const withPhoto = !another && !state.ingredients.length;
+  if(withPhoto && !state.blob){ setStatus("Ajoutez d'abord une photo.", true); return; }
+  state.busy=true; $("#go").disabled=true; $("#another") && ($("#another").disabled=true);
+  setStatus(withPhoto ? "Claude regarde votre frigo…" : "Claude cherche une autre idée…");
+  try{
+    const opts = { modelTier:"default", cache:false };
+    if(withPhoto) opts.images=[state.blob];
+    const r = await state.sample.json(buildPrompt(withPhoto, another ? state.recipe?.titre : ""), opts);
+    if(withPhoto && Array.isArray(r.ingredients_detectes)) state.ingredients = r.ingredients_detectes.slice(0,30);
+    r._limit = kcalLimit();
+    state.recipe = r; renderIngs(); renderRecipe(); setStatus("Recette prête. Bon appétit !");
+  }catch(err){
+    const msg = err?.code==="rate_limited" ? "Trop de demandes d'un coup. Réessayez dans une minute."
+      : err?.code==="not_granted" ? "Autorisez Frigo Malin à utiliser Claude pour obtenir des recettes."
+      : "La recette n'a pas pu être générée. Réessayez, ou retirez la photo et listez les ingrédients.";
+    setStatus(msg, true);
+  }finally{ state.busy=false; $("#go").disabled=!state.blob && !state.ingredients.length; if($("#another")) $("#another").disabled=false; }
+}
+$("#go").onclick=()=>findRecipe(false);
+$("#another").onclick=()=>findRecipe(true);
+
+function renderRecipe(example){
+  const r=state.recipe, el=$("#recipe");
+  if(!r){ el.hidden=true; $("#recipe-actions").hidden=true; return; }
+  el.hidden=false; $("#recipe-actions").hidden=!!example;
+  el.innerHTML = `
+    <div class="recipe-head">
+      <span class="eyebrow">${example ? "Exemple de recette" : "Votre recette"} · ${esc(r.categorie||"")}</span>
+      <h2>${esc(r.titre)}</h2>
+      ${r.accroche?`<p class="muted">${esc(r.accroche)}</p>`:""}
+      <div class="meta"><span>Temps <b>${esc(r.temps)}</b></span><span>Difficulté <b>${esc(r.difficulte||"facile")}</b></span><span>Portions <b>${esc(r.portions)}</b></span>${r.kcal_par_portion?`<span>≈ <b>${esc(r.kcal_par_portion)}</b> kcal / portion</span>`:""}</div>
+      ${(()=>{ const lim=r._limit, k=Number(r.kcal_par_portion); if(!lim||!k) return "";
+        return k<=lim ? `<span class="kcal-ok">Sous votre limite de ${lim} kcal</span>` : `<span class="kcal-over">Dépasse votre limite de ${lim} kcal : demandez une autre idée</span>`; })()}
+    </div>
+    <div><h3 style="margin-bottom:6px">Ingrédients</h3><ul class="list">${(r.ingredients||[]).map(i=>`<li>${esc(i.quantite?i.quantite+" ":"")}${esc(i.nom)}</li>`).join("")}</ul></div>
+    ${r.a_acheter?.length?`<p class="small"><strong>À acheter :</strong> ${r.a_acheter.map(esc).join(", ")}</p>`:""}
+    <div><h3 style="margin-bottom:6px">Préparation</h3><ol class="steps">${(r.etapes||[]).map(s=>`<li>${esc(s)}</li>`).join("")}</ol></div>
+    ${r.astuce_antigaspi?`<p class="tip"><strong>Astuce anti-gaspi :</strong> ${esc(r.astuce_antigaspi)}</p>`:""}`;
+}
+
+$("#cooked").onclick=async()=>{
+  const r=state.recipe; if(!r) return;
+  await addMeal({ titre:r.titre, categorie:CATS.includes(r.categorie)?r.categorie:"Légumes & végé",
+    ingredients:(r.ingredients||[]).map(i=>i.nom).slice(0,15), source:"frigo", kcal:Number(r.kcal_par_portion)||null, date:todayISO() });
+  toast("Ajouté à votre journal");
+};
+
+/* ---------- Manual meal ---------- */
+$("#m-cat").innerHTML = CATS.map(c=>`<option>${c}</option>`).join("");
+$("#m-date").value = todayISO();
+$("#manual-form").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const titre=$("#m-title").value.trim(); if(!titre) return;
+  await addMeal({ titre, categorie:$("#m-cat").value, date:$("#m-date").value||todayISO(),
+    ingredients:$("#m-ings").value.split(",").map(s=>s.trim()).filter(Boolean), source:"manuel", kcal:null });
+  $("#m-title").value=""; $("#m-ings").value=""; toast("Repas ajouté");
+});
+
+/* ---------- Storage ---------- */
+const LS="frigo-malin-meals";
+function lsLoad(){ try{ return JSON.parse(localStorage.getItem(LS)||"[]"); }catch(e){ return []; } }
+function lsSave(){ try{ localStorage.setItem(LS, JSON.stringify(state.meals.filter(m=>!m._remote))); }catch(e){} }
+function mealsCol(){ return state.db.collection("data/users/"+state.uid+"/meals"); }
+
+async function addMeal(m){
+  m.createdAt = Date.now();
+  if(state.store==="db"){
+    try{ const ref = await mealsCol().add(m); return ref; }
+    catch(err){ state.store="local"; updateNote(); }
+  }
+  m.id = "l"+m.createdAt; state.meals.push(m); lsSave(); renderRecap();
+}
+async function deleteMeal(m){
+  if(m._remote && state.store==="db"){ try{ await mealsCol().doc(m.id).delete(); }catch(e){ toast("Suppression impossible"); } return; }
+  state.meals = state.meals.filter(x=>x!==m); lsSave(); renderRecap();
+}
+function updateNote(){
+  $("#storage-note").textContent = state.store==="db"
+    ? "Votre journal est enregistré dans votre compte : il vous suit sur tous vos appareils et reste privé."
+    : "Votre journal est enregistré sur cet appareil uniquement.";
+}
+
+/* ---------- Recap ---------- */
+const MONTHS=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+function monthKey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
+function exampleMeals(){
+  const k=monthKey(state.month); const mk=(day,titre,categorie,ingredients,source)=>({titre,categorie,ingredients,source,date:k+"-"+String(day).padStart(2,"0"),_ex:true});
+  return [
+    mk(2,"Gratin de courgettes au chèvre","Légumes & végé",["courgette","chèvre","crème"],"frigo"),
+    mk(4,"Poulet rôti, pommes de terre","Viande",["poulet","pomme de terre","ail"],"manuel"),
+    mk(5,"Omelette aux restes de légumes","Œufs & laitages",["œuf","poivron","courgette"],"frigo"),
+    mk(9,"Risotto aux champignons","Pâtes, riz & céréales",["riz","champignon","parmesan"],"frigo"),
+    mk(11,"Saumon, haricots verts","Poisson & fruits de mer",["saumon","haricot vert","citron"],"manuel"),
+    mk(12,"Velouté de carottes","Soupe",["carotte","oignon","crème"],"frigo"),
+    mk(15,"Pâtes au pesto et tomates","Pâtes, riz & céréales",["pâtes","tomate","basilic"],"frigo"),
+    mk(18,"Chili sin carne","Légumes & végé",["haricot rouge","tomate","poivron","oignon"],"frigo"),
+    mk(20,"Burger maison","Viande",["bœuf","tomate","cheddar"],"manuel"),
+    mk(23,"Crumble pommes-poires","Sucré",["pomme","poire","beurre"],"frigo"),
+  ];
+}
+function monthMeals(){ const k=monthKey(state.month); return state.meals.filter(m=>(m.date||"").startsWith(k)).sort((a,b)=>a.date<b.date?-1:1); }
+
+function renderRecap(){
+  $("#month-title").textContent = MONTHS[state.month.getMonth()]+" "+state.month.getFullYear();
+  let list = monthMeals(); const isEx = !state.meals.length;
+  if(isEx) list = exampleMeals();
+  $("#example-banner").hidden = !isEx;
+  $("#bilan-btn").disabled = isEx || !list.length || !state.sample;
+
+  const n=list.length, frigo=list.filter(m=>m.source==="frigo").length, veg=list.filter(m=>VEG.has(m.categorie)).length;
+  $("#s-meals").textContent=n; $("#s-frigo").textContent=frigo; $("#s-veg").textContent = n?Math.round(veg/n*100)+"%":"–";
+
+  const counts={}; list.forEach(m=>counts[m.categorie]=(counts[m.categorie]||0)+1);
+  const max=Math.max(1,...Object.values(counts));
+  $("#bars").innerHTML = n ? CATS.filter(c=>counts[c]).sort((a,b)=>counts[b]-counts[a]).map(c=>
+    `<div class="bar"><span>${esc(c)}</span><div class="track"><div class="fill" style="width:${counts[c]/max*100}%"></div></div><span class="v">${counts[c]}</span></div>`).join("")
+    : `<p class="muted small">Aucun repas ce mois-ci. Cuisinez une recette depuis l'onglet Mon frigo pour la voir ici.</p>`;
+
+  // calendar
+  const y=state.month.getFullYear(), mo=state.month.getMonth(), days=new Date(y,mo+1,0).getDate(), first=(new Date(y,mo,1).getDay()+6)%7;
+  const per={}; list.forEach(m=>{ const d=+m.date.slice(8,10); per[d]=(per[d]||0)+1; });
+  let cal=["L","M","M","J","V","S","D"].map(d=>`<div class="d blank">${d}</div>`).join("");
+  for(let i=0;i<first;i++) cal+=`<div class="d blank"></div>`;
+  for(let d=1;d<=days;d++) cal+=`<div class="d ${per[d]>=2?"l2":per[d]?"l1":""}" title="${per[d]||0} repas">${d}</div>`;
+  $("#cal").innerHTML=cal;
+
+  const ic={}; list.forEach(m=>(m.ingredients||[]).forEach(i=>{ const k=i.toLowerCase(); ic[k]=(ic[k]||0)+1; }));
+  const top=Object.entries(ic).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  $("#top-ings").innerHTML = top.length ? top.map(([k,v])=>`<span class="chip" style="cursor:default">${esc(k)} <span class="muted">×${v}</span></span>`).join("") : `<span class="muted small">Pas encore d'ingrédients notés.</span>`;
+
+  const ml=$("#meals"); ml.innerHTML="";
+  list.slice().reverse().forEach(m=>{
+    const row=document.createElement("div"); row.className="meal";
+    row.innerHTML=`<span class="date">${m.date.slice(8,10)}/${m.date.slice(5,7)}</span><div class="t"><div>${esc(m.titre)}</div><span class="muted small">${esc(m.categorie)}</span></div>`;
+    const right=document.createElement("div"); right.className="row";
+    right.innerHTML=`<span class="tag ${m.source==="frigo"?"frigo":""}">${m.source==="frigo"?"Frigo Malin":"Ajout manuel"}</span>`;
+    if(!m._ex){ const del=document.createElement("button"); del.className="del"; del.textContent="✕"; del.setAttribute("aria-label","Supprimer "+m.titre); del.onclick=()=>deleteMeal(m); right.appendChild(del); }
+    row.appendChild(right); ml.appendChild(row);
+  });
+  if(!list.length) ml.innerHTML=`<p class="muted small" style="padding:10px 0">Rien de noté pour ce mois.</p>`;
+}
+$("#prev").onclick=()=>{ state.month=new Date(state.month.getFullYear(),state.month.getMonth()-1,1); $("#bilan").textContent=""; renderRecap(); };
+$("#next").onclick=()=>{ state.month=new Date(state.month.getFullYear(),state.month.getMonth()+1,1); $("#bilan").textContent=""; renderRecap(); };
+
+$("#bilan-btn").onclick=async()=>{
+  const list=monthMeals(); if(!list.length||!state.sample) return;
+  const out=$("#bilan"); out.classList.remove("muted"); out.textContent="Claude relit votre mois…"; $("#bilan-btn").disabled=true;
+  const lignes=list.map(m=>`${m.date} — ${m.titre} (${m.categorie}; ${(m.ingredients||[]).join(", ")}${m.kcal?"; ~"+m.kcal+" kcal":""}; ${m.source==="frigo"?"recette anti-gaspi":"ajout manuel"})`).join("\n");
+  try{
+    await state.sample(`Voici le journal des repas d'une personne pour ${MONTHS[state.month.getMonth()].toLowerCase()} ${state.month.getFullYear()} :
+${lignes}
+
+Écris-lui un bilan mensuel chaleureux et concret, en français, en tutoyant, sans markdown (texte brut, paragraphes courts, tirets autorisés) :
+1. Une phrase d'ouverture qui résume son mois.
+2. Ce qui est bien (variété, légumes, anti-gaspi) avec des chiffres tirés du journal.
+3. Un point d'équilibre à surveiller, sans culpabiliser et sans avis médical.
+4. Trois idées de plats pour le mois prochain qui comblent ce manque.
+Maximum 180 mots.`, { modelTier:"default", onText:({text})=>{ out.textContent=text; } });
+  }catch(err){ out.textContent = err?.code==="rate_limited" ? "Trop de demandes. Réessayez dans une minute." : "Le bilan n'a pas pu être rédigé. Réessayez."; }
+  finally{ $("#bilan-btn").disabled=false; }
+};
+
+/* ---------- Boot ---------- */
+state.meals = lsLoad();
+state.recipe = {
+  titre:"Frittata courgette, feta et menthe", accroche:"La courgette un peu molle et la fin de feta deviennent un dîner en 20 minutes.",
+  temps:"20 min", difficulte:"facile", portions:2, categorie:"Œufs & laitages", kcal_par_portion:380,
+  ingredients:[{nom:"œufs",quantite:"5"},{nom:"courgette",quantite:"1"},{nom:"feta",quantite:"80 g"},{nom:"menthe ou persil",quantite:"quelques feuilles"},{nom:"huile d'olive",quantite:"1 c. à s."}],
+  a_acheter:[], etapes:["Râpez la courgette, salez-la et pressez-la dans un torchon.","Faites-la revenir 3 minutes à la poêle avec l'huile.","Battez les œufs, ajoutez la feta émiettée et les herbes, versez dans la poêle.","Couvrez et laissez cuire 8 minutes à feu doux."],
+  astuce_antigaspi:"Les tiges d'herbes se hachent finement et vont aussi dans les œufs."
+};
+renderRecipe(true);
+updateNote();
+if(location.hash==="#recap") showTab("recap"); else renderRecap();
+
+(async()=>{
+  if(!window.claude?.use) return;
+  const [sample, db, user] = await Promise.all([claude.use("sample"), claude.use("db"), claude.use("user")]);
+  if(sample){
+    state.sample = sample;
+    try{ const lim = await sample.limits(); if(!lim?.images){ ["#photo","#photo-cam","#btn-cam","#btn-import"].forEach(s=>$(s).disabled=true); setStatus("L'envoi de photos n'est pas disponible ici. Listez vos ingrédients à la main.", true); $("#ing-box").hidden=false; } }catch(e){}
+    if(state.blob) $("#go").disabled=false;
+  } else {
+    setStatus("Ouvrez Frigo Malin connecté à votre compte Claude pour recevoir des recettes.", true);
+  }
+  $("#bilan-btn").disabled = !state.sample || !monthMeals().length;
+  if(db && user){
+    const uid = await user.id();
+    if(uid){
+      state.db=db; state.uid=uid;
+      const timer=setTimeout(()=>{},10000);
+      mealsCol().onSnapshot(snap=>{
+        clearTimeout(timer);
+        state.store="db";
+        const remote = snap.docs.map(d=>({...d.data(), id:d.id, _remote:true}));
+        const local = lsLoad();
+        state.meals = remote.concat(local.filter(l=>!remote.some(r=>r.createdAt===l.createdAt)));
+        updateNote(); renderRecap();
+      }, ()=>{ clearTimeout(timer); state.store="local"; updateNote(); });
+    }
+  }
+})();
+
+// Manual ingredient path: allow searching without a photo once ingredients exist
+new MutationObserver(()=>{ if(state.sample && state.ingredients.length) $("#go").disabled=false; }).observe($("#ings"),{childList:true});
+</script>
+
+</body></html>
